@@ -1,30 +1,33 @@
 CREATE TABLE "likes" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"post_id" integer NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
+	"post_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "posts" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" text NOT NULL,
 	"content" text NOT NULL,
 	"views" integer DEFAULT 0,
 	"is_published" boolean DEFAULT false,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now(),
-	"author_id" integer NOT NULL
+	"author_id" integer NOT NULL,
+	"latitude" text NOT NULL,
+	"longitude" text NOT NULL,
+	"emotion_tag" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "profile" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"birthdate" date,
 	"biography" text,
-	"user_id" integer
+	"user_id" uuid
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text,
 	"nickname" text,
 	"password" text,

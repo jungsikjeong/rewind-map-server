@@ -3,14 +3,14 @@ import {
   boolean,
   integer,
   pgTable,
-  serial,
   text,
   timestamp,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { likes } from '../likes/schema';
 
 export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
   content: text('content').notNull(),
   views: integer('views').default(0),
