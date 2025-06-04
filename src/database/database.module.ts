@@ -1,7 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
-// import * as userSchema from '../users/schema';
+import * as userSchema from '../api/users/schema';
+import * as postSchema from '../api/posts/schema';
+import * as likeSchema from '../api/likes/schema';
 import { Pool } from 'pg';
 import { DATABASE_CONNECTION } from './database-connection';
 
@@ -16,7 +18,9 @@ import { DATABASE_CONNECTION } from './database-connection';
         });
         return drizzle(pool, {
           schema: {
-            // ...userSchema,
+            ...userSchema,
+            ...postSchema,
+            ...likeSchema,
           },
         });
       },

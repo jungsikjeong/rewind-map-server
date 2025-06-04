@@ -1,8 +1,4 @@
-import {
-  type InferInsertModel,
-  type InferSelectModel,
-  relations,
-} from 'drizzle-orm';
+import { type InferSelectModel, relations } from 'drizzle-orm';
 import {
   boolean,
   integer,
@@ -11,7 +7,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { likes } from '../like/schema';
+import { likes } from '../likes/schema';
 
 export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),
@@ -22,6 +18,9 @@ export const posts = pgTable('posts', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   authorId: integer('author_id').notNull(),
+  latitude: text('latitude').notNull(),
+  longitude: text('longitude').notNull(),
+  emotionTag: text('emotion_tag').notNull(),
 });
 
 export const postsRelations = relations(posts, ({ many }) => ({
@@ -29,4 +28,3 @@ export const postsRelations = relations(posts, ({ many }) => ({
 }));
 
 export type Post = InferSelectModel<typeof posts>;
-export type NewPost = InferInsertModel<typeof posts>;
