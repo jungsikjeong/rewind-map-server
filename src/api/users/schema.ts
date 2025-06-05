@@ -4,9 +4,9 @@ import { posts } from '../posts/schema';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').unique(),
-  nickname: text('nickname').unique(),
-  password: text('password'),
+  email: text('email').unique().notNull(),
+  nickname: text('nickname').unique().notNull(),
+  password: text('password').notNull(),
   role: text('role').notNull().default('user'),
 });
 
@@ -25,3 +25,6 @@ export const profile = pgTable('profile', {
 export const profileRelations = relations(profile, ({ one }) => ({
   user: one(users, { fields: [profile.userId], references: [users.id] }),
 }));
+
+export type NewUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;

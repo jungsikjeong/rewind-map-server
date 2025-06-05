@@ -18,7 +18,7 @@ interface JwtPayload {
 }
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class PublicPrivateGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
