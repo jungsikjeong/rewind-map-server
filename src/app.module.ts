@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './api/auth/auth.module';
+import { JwtAuthGuard } from './api/auth/guard/jwt-auth.guard';
 import { UsersModule } from './api/users/users.module';
 import { DatabaseModule } from './database/database.module';
 
@@ -14,6 +16,11 @@ import { DatabaseModule } from './database/database.module';
     UsersModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -8,7 +8,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PublicPrivateGuard } from './guard/auth.guard';
 import { RolesGuard } from './guard/roles.guard';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
   imports: [
@@ -18,14 +19,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (configService: ConfigService) => ({
         global: true,
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
+        signOptions: { expiresIn: '15m' },
       }),
       inject: [ConfigService],
     }),
   ],
   providers: [
     AuthService,
-    JwtStrategy,
+    JwtAccessStrategy,
+    JwtRefreshStrategy,
     //  APPGUARD 전역설정
     {
       provide: APP_GUARD,

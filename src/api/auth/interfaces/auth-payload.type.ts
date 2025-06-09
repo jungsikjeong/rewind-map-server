@@ -1,4 +1,4 @@
-export type AuthPayload = {
+export type AuthJwtPayload = {
   sub: number;
   nickname: string;
   roles: string[];

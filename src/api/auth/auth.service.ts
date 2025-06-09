@@ -5,9 +5,11 @@ import {
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Response } from 'express';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
 import * as schema from '../users/schema';
 import { NewUser, User } from '../users/schema';
@@ -20,6 +22,7 @@ export class AuthService {
     private jwtService: JwtService,
     @Inject(DATABASE_CONNECTION)
     private readonly database: NodePgDatabase<typeof schema>,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -30,7 +33,11 @@ export class AuthService {
     return null;
   }
 
-  async signIn(email: string, pass: string): Promise<{ access_token: string }> {
+  async signIn(
+    email: string,
+    pass: string,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
     const user = await this.usersService.findUserByEmail(email);
 
     if (!user) {
@@ -43,14 +50,13 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const access_token = await this.getAccessToken(user);
-
-    return {
-      access_token,
-    };
+    return await this.getAccessToken(user, res);
   }
 
-  async signUp(signUpDto: NewUser): Promise<{ access_token: string }> {
+  async signUp(
+    signUpDto: NewUser,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
     try {
       const existingUserByEmail = await this.usersService.findUserByEmail(
         signUpDto.email,
@@ -76,9 +82,10 @@ export class AuthService {
         .values({ ...signUpDto, password: hash })
         .returning();
 
-      const access_token = await this.getAccessToken(user);
+      const accessToken = await this.getAccessToken(user, res);
+      this.setRefreshToken(user.id, res);
 
-      return { access_token };
+      return accessToken;
     } catch (error) {
       if (error instanceof ConflictException) {
         throw error;
@@ -90,17 +97,61 @@ export class AuthService {
     }
   }
 
-  async getAccessToken(user: User) {
+  async getAccessToken(
+    user: User,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
     const payload = {
       sub: user.id,
       nickname: user.nickname,
       roles: user.role,
     };
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '15m',
+    });
 
-    return await this.jwtService.signAsync(payload);
+    const cookieOptions = {
+      path: '/',
+      ...(process.env.NODE_ENV === 'production'
+        ? {
+            domain: '.yoursite.com',
+            sameSite: 'none' as const,
+            secure: true,
+            httpOnly: true,
+          }
+        : {}),
+    };
+    res.cookie('accessToken', accessToken, cookieOptions);
+
+    return { accessToken };
   }
 
-  async restoreAccessToken(user: User): Promise<string> {
-    return await this.getAccessToken(user);
+  async restoreAccessToken(
+    user: User,
+    res: Response,
+  ): Promise<{ accessToken: string }> {
+    return await this.getAccessToken(user, res);
+  }
+
+  setRefreshToken(userId: string, res: Response): void {
+    const refreshToken = this.jwtService.sign(
+      { sub: userId },
+      { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '2w' },
+    );
+
+    const setResCookie = {
+      path: '/',
+      ...(process.env.NODE_ENV === 'production'
+        ? {
+            domain: '.mybacksite.com',
+            sameSite: 'none' as const,
+            secure: true,
+            httpOnly: true,
+          }
+        : {}),
+    };
+
+    res.cookie('refreshToken', refreshToken, setResCookie);
   }
 }
