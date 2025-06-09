@@ -11,19 +11,6 @@ export class UsersService {
     private readonly database: NodePgDatabase<typeof schema>,
   ) {}
 
-  private readonly users = [
-    {
-      userId: 1,
-      email: 'john@example.com',
-      password: 'changeme',
-    },
-    {
-      userId: 2,
-      email: 'maria@example.com',
-      password: 'guess',
-    },
-  ];
-
   async findUserByEmail(email: string): Promise<User | undefined> {
     const result = await this.database.query.users.findFirst({
       where: (users, { eq }) => eq(users.email, email),
