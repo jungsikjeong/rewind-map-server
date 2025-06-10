@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { likes } from '../likes/schema';
 import { emotionTags } from '../emotion-tags/schema';
+import { users } from '../users/schema';
 
 export const posts = pgTable('posts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -18,7 +19,9 @@ export const posts = pgTable('posts', {
   isPublished: boolean('is_published').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
-  authorId: uuid('author_id').notNull(),
+  authorId: uuid('author_id')
+    .notNull()
+    .references(() => users.id),
   latitude: text('latitude').notNull(),
   longitude: text('longitude').notNull(),
   emotionTagId: uuid('emotion_tag_id')
@@ -28,6 +31,10 @@ export const posts = pgTable('posts', {
 });
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
   likes: many(likes),
   emotionTag: one(emotionTags, {
     fields: [posts.emotionTagId],
