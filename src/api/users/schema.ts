@@ -5,6 +5,7 @@ import { posts } from '../posts/schema';
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').unique().notNull(),
+  avatar: text('avatar'),
   nickname: text('nickname').unique().notNull(),
   password: text('password').notNull(),
   role: text('role').notNull().default('user'),
