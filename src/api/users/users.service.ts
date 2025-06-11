@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
 import * as schema from './schema';
@@ -23,5 +23,17 @@ export class UsersService {
       where: (users, { eq }) => eq(users.nickname, nickname),
     });
     return result;
+  }
+
+  async findUserById(id: string): Promise<Omit<User, 'password'> | undefined> {
+    const result = await this.database.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, id),
+    });
+
+    if (!result) throw new NotFoundException('USER_NOT_FOUND');
+
+    const { password, ...userWithoutPassword } = result;
+
+    return userWithoutPassword;
   }
 }

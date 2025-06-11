@@ -4,22 +4,23 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
-  Request,
+  Req,
   Res,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { Request as ExpressRequest, Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
+import { GetUser } from 'src/commons/decorators/get-user.decorator';
 import { User } from '../users/schema';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { SignInDTO, SignUpDTO } from './dto/auth.dto';
-import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { GetUser } from 'src/commons/decorators/get-user.decorator';
-import { AuthGuard } from '@nestjs/passport';
+import { EditProfileDto } from './dto/edit-profile.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,35 +42,35 @@ export class AuthController {
 
   @Post('signup')
   @Public()
-  signUp(@Body(ValidationPipe) signUpDto: SignUpDTO, @Res() res: Response) {
+  signUp(
+    @Body(ValidationPipe) signUpDto: SignUpDTO,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     return this.authService.signUp(signUpDto, res);
   }
 
   @Post('restore-access-token')
-  @UseGuards(JwtRefreshStrategy)
+  @UseGuards(AuthGuard('jwt-refresh'))
   @Public()
-  restoreAccessToken(@Request() req: ExpressRequest, @Res() res: Response) {
-    console.log('리스토어 토큰 테스트:', req.user);
+  restoreAccessToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @GetUser() user: User,
+  ) {
     return this.authService.restoreAccessToken(req.user as User, res);
   }
 
-  // @Get('/me')
-  // @UseGuards(AuthGuard())
-  // getProfile(@GetUser() user: User) {
-  //   return this.authService.getProfile(user);
-  // }
+  @Get('/me')
+  @UseGuards(AuthGuard())
+  getProfile(@GetUser() user: User) {
+    return user;
+  }
 
-  // @Patch('/me')
-  // @UseGuards(AuthGuard())
-  // editProfile(@Body() editProfileDto: EditProfileDto, @GetUser() user: User) {
-  //   return this.authService.editProfile(editProfileDto, user);
-  // }
-
-  // @Get('/:id')
-  // @UseGuards(AuthGuard())
-  // getUserProfile(@Param('id', ParseIntPipe) id: number) {
-  //   return this.authService.getUserProfile(id);
-  // }
+  @Patch('/me')
+  @UseGuards(AuthGuard())
+  editProfile(@Body() editProfileDto: EditProfileDto, @GetUser() user: User) {
+    return this.authService.editProfile(editProfileDto, user);
+  }
 
   @Post('logout')
   @UseGuards(AuthGuard())

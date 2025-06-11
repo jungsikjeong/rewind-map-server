@@ -1,24 +1,28 @@
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import * as cookie from 'cookie';
 import { Request } from 'express';
 import { Strategy } from 'passport-jwt';
-import { AuthJwtPayload } from '../interfaces/auth-payload.type';
-import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(private configService: ConfigService) {
     super({
       jwtFromRequest: (req: Request) => {
-        const cookie = req.headers.cookie as string;
-        const refreshToken = cookie?.toLowerCase().replace('refreshToken=', '');
-        return refreshToken;
+        const cookies = cookie.parse(req.headers.cookie || '');
+        const token = cookies.refreshtoken || cookies.refreshToken || null;
+
+        return token;
       },
       secretOrKey: configService.get<string>('JWT_SECRET')!,
     });
   }
 
-  validate(payload: AuthJwtPayload): { userId: number; nickname: string } {
-    return { userId: payload.sub, nickname: payload.nickname };
+  validate(payload: { sub: string }) {
+    return { id: payload.sub };
   }
 }

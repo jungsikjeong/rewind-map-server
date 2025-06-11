@@ -3,7 +3,9 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -14,6 +16,8 @@ import { DATABASE_CONNECTION } from 'src/database/database-connection';
 import * as schema from '../users/schema';
 import { NewUser, User } from '../users/schema';
 import { UsersService } from '../users/users.service';
+import { EditProfileDto } from './dto/edit-profile.dto';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class AuthService {
@@ -97,18 +101,58 @@ export class AuthService {
     }
   }
 
+  async editProfile(editProfileDto: EditProfileDto, user: User) {
+    try {
+      if (Object.keys(editProfileDto).length === 0) {
+        throw new BadRequestException('수정할 데이터가 없습니다.');
+      }
+
+      const existingNickname = await this.usersService.findUserByNickname(
+        editProfileDto.nickname,
+      );
+
+      if (existingNickname) {
+        throw new ConflictException('NICKNAME_EXISTS');
+      }
+
+      const [result] = await this.database
+        .update(schema.users)
+        .set({ ...editProfileDto })
+        .where(eq(schema.users.id, user.id))
+        .returning();
+
+      if (!result) {
+        throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      }
+
+      const { password, ...userWithoutPassword } = result;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('error:', error);
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        '회원정보 수정 중 오류가 발생했습니다.',
+      );
+    }
+  }
+
   async getAccessToken(
     user: User,
     res: Response,
   ): Promise<{ accessToken: string }> {
     const payload = {
       sub: user.id,
-      nickname: user.nickname,
-      roles: user.role,
     };
+
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '15m',
+      expiresIn:
+        this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION') ?? '15m',
     });
 
     const cookieOptions = {
@@ -122,6 +166,7 @@ export class AuthService {
           }
         : {}),
     };
+
     res.cookie('accessToken', accessToken, cookieOptions);
 
     return { accessToken };
@@ -137,7 +182,11 @@ export class AuthService {
   setRefreshToken(userId: string, res: Response): void {
     const refreshToken = this.jwtService.sign(
       { sub: userId },
-      { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '2w' },
+      {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn:
+          this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION') ?? '2w',
+      },
     );
 
     const setResCookie = {
