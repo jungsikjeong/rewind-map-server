@@ -51,7 +51,7 @@ export class AuthController {
 
   @Post('restore-access-token')
   @UseGuards(AuthGuard('jwt-refresh'))
-  @Public()
+  // @Public()
   restoreAccessToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

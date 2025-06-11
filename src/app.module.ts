@@ -5,6 +5,7 @@ import { AuthModule } from './api/auth/auth.module';
 import { JwtAuthGuard } from './api/auth/guard/jwt-auth.guard';
 import { UsersModule } from './api/users/users.module';
 import { DatabaseModule } from './database/database.module';
+import { FilesModule } from './api/files/files.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DatabaseModule } from './database/database.module';
     DatabaseModule,
     AuthModule,
     UsersModule,
+    FilesModule,
   ],
   controllers: [],
   providers: [
