@@ -9,12 +9,24 @@ import { PublicPrivateGuard } from './guard/auth.guard';
 import { RolesGuard } from './guard/roles.guard';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { FilesModule } from '../files/files.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({}),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRATION', '15m'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    FilesModule,
   ],
   providers: [
     AuthService,

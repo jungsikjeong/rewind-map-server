@@ -1,11 +1,13 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Express } from 'express';
 
 class SignInDTO {
   @IsString()
@@ -36,6 +38,10 @@ class SignUpDTO {
   @MinLength(2)
   @MaxLength(8)
   nickname: string;
+
+  @IsOptional()
+  @IsString()
+  avatar: string;
 
   @IsString()
   @MinLength(8)

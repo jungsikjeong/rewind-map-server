@@ -27,6 +27,7 @@ export class AuthService {
     @Inject(DATABASE_CONNECTION)
     private readonly database: NodePgDatabase<typeof schema>,
     private configService: ConfigService,
+    // private filesService: FilesService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -76,6 +77,11 @@ export class AuthService {
 
       if (existingUserByNickname) {
         throw new ConflictException('NICKNAME_EXISTS');
+      }
+
+      if (signUpDto.avatar) {
+        // TODO:아바타 파일 업로드기능 추가
+        // const avatar = await this.filesService.uploadFile(signUpDto.avatar);
       }
 
       const saltOrRounds = 10;

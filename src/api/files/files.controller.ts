@@ -1,17 +1,21 @@
 import {
+  BadRequestException,
   Controller,
   Post,
-  UploadedFiles,
-  UseGuards,
+  UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
 import { diskStorage } from 'multer';
-import { basename, extname } from 'path';
-import { numbers } from 'src/commons/contants';
-import { Public } from '../auth/decorators/public.decorator';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { FilesService } from './files.service';
 import { AuthGuard } from '@nestjs/passport';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 try {
   fs.readdirSync('uploads');
@@ -19,47 +23,35 @@ try {
   fs.mkdirSync('uploads');
 }
 
-@Controller('file')
+@Controller('files')
+@UseGuards(AuthGuard('jwt'))
 export class FilesController {
+  constructor(private readonly filesService: FilesService) {}
+
+  @Post('upload')
   @UseInterceptors(
-    FilesInterceptor('images', numbers.MAX_IMAGES_COUNT, {
+    FileInterceptor('file', {
       storage: diskStorage({
-        destination(req, file, cb) {
-          cb(null, 'uploads/');
-        },
-        filename(req, file, cb) {
-          const ext = extname(file.originalname);
-          cb(null, basename(file.originalname, ext) + Date.now() + ext);
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          cb(null, `${uuidv4()}${ext}`);
         },
       }),
-      limits: { fileSize: numbers.MAX_IAMGE_SIZE },
+      limits: {
+        fileSize: MAX_FILE_SIZE,
+      },
+      fileFilter: (req, file, cb) => {
+        if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('지원하지 않는 파일 형식입니다.'), false);
+        }
+      },
     }),
   )
-  @Post('/images')
-  @UseGuards(AuthGuard())
-  uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
-    const uris = files.map((file) => file.filename);
-
-    return uris;
-  }
-
-  @Post('/image')
-  @UseInterceptors(
-    FilesInterceptor('image', numbers.MAX_IMAGE_COUNT, {
-      storage: diskStorage({
-        destination(req, file, cb) {
-          cb(null, 'uploads/');
-        },
-        filename(req, file, cb) {
-          const ext = extname(file.originalname);
-          cb(null, basename(file.originalname, ext) + Date.now() + ext);
-        },
-      }),
-      limits: { fileSize: numbers.MAX_IAMGE_SIZE },
-    }),
-  )
-  @UseGuards(AuthGuard())
-  uploadImage(@UploadedFiles() file: Express.Multer.File) {
-    return file[0].filename;
+  uploadFile(@UploadedFile() file: Express.Multer.File): string {
+    console.log('file:', file);
+    return this.filesService.upload({ file });
   }
 }
