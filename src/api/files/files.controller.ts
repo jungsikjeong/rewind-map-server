@@ -36,6 +36,7 @@ export class FilesController {
     }),
   )
   @Post('/images')
+  @UseGuards(AuthGuard())
   uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
     const uris = files.map((file) => file.filename);
 
@@ -59,8 +60,6 @@ export class FilesController {
   )
   @UseGuards(AuthGuard())
   uploadImage(@UploadedFiles() file: Express.Multer.File) {
-    console.log(file);
-
-    return file.filename;
+    return file[0].filename;
   }
 }
