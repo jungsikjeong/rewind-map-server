@@ -4,16 +4,16 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
-  ParseIntPipe,
   Patch,
   Post,
   Req,
   Res,
   UseGuards,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { GetUser } from 'src/commons/decorators/get-user.decorator';
 import { User } from '../users/schema';
@@ -42,16 +42,17 @@ export class AuthController {
 
   @Post('signup')
   @Public()
+  @UseInterceptors(FileInterceptor('avatar'))
   signUp(
-    @Body(ValidationPipe) signUpDto: SignUpDTO,
     @Res({ passthrough: true }) res: Response,
+    @Body(ValidationPipe) signUpDto: SignUpDTO,
   ) {
     return this.authService.signUp(signUpDto, res);
   }
 
   @Post('restore-access-token')
   @UseGuards(AuthGuard('jwt-refresh'))
-  // @Public()
+  @Public()
   restoreAccessToken(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

@@ -9,7 +9,7 @@ import { PublicPrivateGuard } from './guard/auth.guard';
 import { RolesGuard } from './guard/roles.guard';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { FilesModule } from '../files/files.module';
+import { FilesModule } from '../upload/upload.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({

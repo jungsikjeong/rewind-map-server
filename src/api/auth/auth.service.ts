@@ -1,23 +1,25 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Response } from 'express';
 import { DATABASE_CONNECTION } from 'src/database/database-connection';
+import { FilesService } from '../upload/upload.service';
 import * as schema from '../users/schema';
-import { NewUser, User } from '../users/schema';
+import { User } from '../users/schema';
 import { UsersService } from '../users/users.service';
+import { SignUpDTO } from './dto/auth.dto';
 import { EditProfileDto } from './dto/edit-profile.dto';
-import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +29,7 @@ export class AuthService {
     @Inject(DATABASE_CONNECTION)
     private readonly database: NodePgDatabase<typeof schema>,
     private configService: ConfigService,
-    // private filesService: FilesService,
+    private filesService: FilesService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -59,7 +61,7 @@ export class AuthService {
   }
 
   async signUp(
-    signUpDto: NewUser,
+    signUpDto: SignUpDTO,
     res: Response,
   ): Promise<{ accessToken: string }> {
     try {
@@ -77,11 +79,6 @@ export class AuthService {
 
       if (existingUserByNickname) {
         throw new ConflictException('NICKNAME_EXISTS');
-      }
-
-      if (signUpDto.avatar) {
-        // TODO:아바타 파일 업로드기능 추가
-        // const avatar = await this.filesService.uploadFile(signUpDto.avatar);
       }
 
       const saltOrRounds = 10;
