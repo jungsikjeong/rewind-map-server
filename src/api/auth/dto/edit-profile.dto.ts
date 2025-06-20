@@ -5,7 +5,4 @@ export class EditProfileDto {
   @MinLength(1)
   @MaxLength(20)
   nickname: string;
-
-  @IsString()
-  imageUri: string;
 }

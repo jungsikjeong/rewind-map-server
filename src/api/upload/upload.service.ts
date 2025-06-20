@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as fs from 'fs';
 
 @Injectable()
 export class FilesService {
@@ -8,5 +9,9 @@ export class FilesService {
 
   getFileName(file: Express.Multer.File): string {
     return file.filename;
+  }
+
+  deleteFile(filename: string): void {
+    fs.unlinkSync(`./uploads/${filename}`);
   }
 }

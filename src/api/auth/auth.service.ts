@@ -82,7 +82,9 @@ export class AuthService {
         throw new ConflictException('NICKNAME_EXISTS');
       }
 
-      const image = avatar ? avatar.filename : null;
+      const image = avatar
+        ? this.filesService.getFileUrl(avatar.filename)
+        : null;
 
       const saltOrRounds = 10;
       const hash = await bcrypt.hash(signUpDto.password, saltOrRounds);
@@ -107,23 +109,33 @@ export class AuthService {
     }
   }
 
-  async editProfile(editProfileDto: EditProfileDto, user: User) {
+  async editProfile(
+    editProfileDto: EditProfileDto,
+    user: User,
+    avatar?: Express.Multer.File,
+  ) {
     try {
-      if (Object.keys(editProfileDto).length === 0) {
-        throw new BadRequestException('수정할 데이터가 없습니다.');
+      if (editProfileDto.nickname) {
+        const existingNickname = await this.usersService.findUserByNickname(
+          editProfileDto.nickname,
+        );
+
+        if (existingNickname && existingNickname.id !== user.id) {
+          throw new ConflictException('NICKNAME_EXISTS');
+        }
       }
 
-      const existingNickname = await this.usersService.findUserByNickname(
-        editProfileDto.nickname,
-      );
+      let image: string | null = null;
+      let oldAvatarPath: string | null = null;
 
-      if (existingNickname) {
-        throw new ConflictException('NICKNAME_EXISTS');
+      if (avatar) {
+        image = this.filesService.getFileUrl(avatar.filename);
+        oldAvatarPath = user.avatar;
       }
 
       const [result] = await this.database
         .update(schema.users)
-        .set({ ...editProfileDto })
+        .set({ ...editProfileDto, avatar: image })
         .where(eq(schema.users.id, user.id))
         .returning();
 
@@ -131,18 +143,35 @@ export class AuthService {
         throw new NotFoundException('사용자를 찾을 수 없습니다.');
       }
 
+      if (oldAvatarPath) {
+        try {
+          await this.filesService.deleteFile(oldAvatarPath);
+        } catch (error) {
+          console.error('이전 파일 삭제 실패:', error);
+        }
+      }
+
       const { password, ...userWithoutPassword } = result;
       return userWithoutPassword;
     } catch (error) {
+      if (avatar) {
+        try {
+          await this.filesService.deleteFile(avatar.filename);
+        } catch (deleteError) {
+          console.error('업로드된 파일 삭제 실패:', deleteError);
+        }
+      }
+
       console.error('error:', error);
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
       ) {
         throw error;
       }
       throw new InternalServerErrorException(
-        '회원정보 수정 중 오류가 발생했습니다.',
+        error.message || '회원정보 수정 중 오류가 발생했습니다.',
       );
     }
   }

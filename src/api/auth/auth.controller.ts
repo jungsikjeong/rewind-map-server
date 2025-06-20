@@ -71,8 +71,12 @@ export class AuthController {
 
   @Patch('/me')
   @UseGuards(AuthGuard())
-  editProfile(@Body() editProfileDto: EditProfileDto, @GetUser() user: User) {
-    return this.authService.editProfile(editProfileDto, user);
+  editProfile(
+    @Body() editProfileDto: EditProfileDto,
+    @GetUser() user: User,
+    @UploadedFile() avatar?: Express.Multer.File,
+  ) {
+    return this.authService.editProfile(editProfileDto, user, avatar);
   }
 
   @Post('logout')
