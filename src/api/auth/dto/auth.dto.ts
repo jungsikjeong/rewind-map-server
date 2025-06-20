@@ -39,10 +39,6 @@ class SignUpDTO {
   @MaxLength(8)
   nickname: string;
 
-  @IsOptional()
-  @IsString()
-  avatar: string;
-
   @IsString()
   @MinLength(8)
   @MaxLength(20)

@@ -11,9 +11,9 @@ import {
   UseGuards,
   UseInterceptors,
   ValidationPipe,
+  UploadedFile,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { GetUser } from 'src/commons/decorators/get-user.decorator';
 import { User } from '../users/schema';
@@ -21,6 +21,7 @@ import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { SignInDTO, SignUpDTO } from './dto/auth.dto';
 import { EditProfileDto } from './dto/edit-profile.dto';
+import { createFileUploadInterceptor } from 'src/commons/interceptors/file-upload.interceptor';
 
 @Controller('auth')
 export class AuthController {
@@ -42,12 +43,13 @@ export class AuthController {
 
   @Post('signup')
   @Public()
-  @UseInterceptors(FileInterceptor('avatar'))
+  @UseInterceptors(createFileUploadInterceptor('avatar'))
   signUp(
     @Res({ passthrough: true }) res: Response,
     @Body(ValidationPipe) signUpDto: SignUpDTO,
+    @UploadedFile() avatar?: Express.Multer.File,
   ) {
-    return this.authService.signUp(signUpDto, res);
+    return this.authService.signUp(signUpDto, res, avatar);
   }
 
   @Post('restore-access-token')

@@ -63,6 +63,7 @@ export class AuthService {
   async signUp(
     signUpDto: SignUpDTO,
     res: Response,
+    avatar?: Express.Multer.File,
   ): Promise<{ accessToken: string }> {
     try {
       const existingUserByEmail = await this.usersService.findUserByEmail(
@@ -81,12 +82,14 @@ export class AuthService {
         throw new ConflictException('NICKNAME_EXISTS');
       }
 
+      const image = avatar ? avatar.filename : null;
+
       const saltOrRounds = 10;
       const hash = await bcrypt.hash(signUpDto.password, saltOrRounds);
 
       const [user] = await this.database
         .insert(schema.users)
-        .values({ ...signUpDto, password: hash })
+        .values({ ...signUpDto, password: hash, avatar: image })
         .returning();
 
       const accessToken = await this.getAccessToken(user, res);

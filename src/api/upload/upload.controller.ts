@@ -9,12 +9,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
-import { diskStorage } from 'multer';
-import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { FilesService } from './upload.service';
+import { createFileUploadInterceptor } from 'src/commons/interceptors/file-upload.interceptor';
 import { numbers } from 'src/commons/contants';
 
 try {
@@ -29,20 +26,7 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('image')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const ext = path.extname(file.originalname);
-          cb(null, `${uuidv4()}${ext}`);
-        },
-      }),
-      limits: {
-        fileSize: numbers.MAX_IAMGE_SIZE,
-      },
-    }),
-  )
+  @UseInterceptors(createFileUploadInterceptor('image'))
   uploadFile(
     @UploadedFile(
       new ParseFilePipe({
@@ -54,6 +38,6 @@ export class FilesController {
     )
     file: Express.Multer.File,
   ): string {
-    return this.filesService.upload({ file });
+    return this.filesService.getFileName(file);
   }
 }
