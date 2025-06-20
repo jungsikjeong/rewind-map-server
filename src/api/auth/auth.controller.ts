@@ -8,20 +8,20 @@ import {
   Post,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
-  UploadedFile,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { GetUser } from 'src/commons/decorators/get-user.decorator';
+import { createFileUploadInterceptor } from 'src/commons/interceptors/file-upload.interceptor';
 import { User } from '../users/schema';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { SignInDTO, SignUpDTO } from './dto/auth.dto';
 import { EditProfileDto } from './dto/edit-profile.dto';
-import { createFileUploadInterceptor } from 'src/commons/interceptors/file-upload.interceptor';
 
 @Controller('auth')
 export class AuthController {
